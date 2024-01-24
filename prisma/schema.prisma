@@ -10,12 +10,100 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model create_exams {
+model exams_type {
+  id       Int      @id @default(autoincrement())
+  name     String   @db.VarChar(100)
+  exams    exams[]
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+}
+
+model exams {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique @db.VarChar(255)
+  examTypeId   Int
+  exam_type    exams_type     @relation(fields: [examTypeId], references: [id])
+  teachers_log teachers_log[]
+  students     students[]
+  createAt     DateTime       @default(now())
+  updateAt     DateTime       @updatedAt
+  exam_routine exam_routine[]
+}
+
+model exam_routine {
+  id        Int          @id @default(autoincrement())
+  examId    Int
+  exams     exams        @relation(fields: [examId], references: [id])
+  examTime  String
+  examDate  String
+  exam_hall exam_halls[]
+  createAt  DateTime     @default(now())
+  updateAt  DateTime     @updatedAt
+}
+
+model exam_halls {
+  id          Int          @id @default(autoincrement())
+  adress      String
+  routineId   Int
+  examRoutine exam_routine @relation(fields: [routineId], references: [id])
+  exam_room   exam_room[]
+}
+
+model exam_room {
+  id         Int        @id @default(autoincrement())
+  roomNo     String
+  examHallId Int
+  examHall   exam_halls @relation(fields: [examHallId], references: [id])
+}
+
+model teachers {
+  id           Int            @id @default(autoincrement())
+  name         String         @db.VarChar(100)
+  email        String         @unique
+  phone        String         @db.Char(11)
+  address      String         @db.VarChar(100)
+  teachers_log teachers_log[]
+  createAt     DateTime       @default(now())
+  updateAt     DateTime       @updatedAt
+}
+
+model teachers_log {
   id        Int      @id @default(autoincrement())
-  name      String   @unique @db.VarChar(255)
-  exam_type Int
-  createAt  DateTime @default(now())
-  updateAt  DateTime @updatedAt
+  teacherId Int
+  teacher   teachers @relation(fields: [teacherId], references: [id])
+  examId    Int
+  exams     exams    @relation(fields: [examId], references: [id])
+}
+
+model students {
+  id                 Int                     @id @default(autoincrement())
+  name               String                  @db.VarChar(100)
+  email              String                  @unique
+  address            String                  @db.VarChar(100)
+  registretionDone   Boolean                 @default(false)
+  varify             Boolean                 @default(false)
+  examId             Int
+  exams              exams                   @relation(fields: [examId], references: [id])
+  rollNo             String
+  registerNo         String
+  studentsFaceVector students_face_vectors[]
+  student_exam_log   student_exam_log[]
+  createAt           DateTime                @default(now())
+  updateAt           DateTime                @updatedAt
+}
+
+model students_face_vectors {
+  id         Int      @id @default(autoincrement())
+  faceVector String
+  studentId  Int
+  student    students @relation(fields: [studentId], references: [id])
+  createAt   DateTime @default(now())
+}
+
+model student_exam_log {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  student   students @relation(fields: [studentId], references: [id])
 }
 
 model photo_path {
