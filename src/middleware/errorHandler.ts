@@ -25,10 +25,7 @@ const errorHandler = (err: any, req: Request, res: Response, next: NextFunction)
     }
 
     if (error.name === "PrismaClientValidationError") {
-        const regex = /Unknown argument*/;
-        const match = error.message.match(regex);
-        console.log(match[0]);
-        const message = match ? match[0].split('.')[0] : "Error message not found";
+        const message = "Unknown Argument or Argument is missing";
         error = new errorResponse(message, 400);
     }
 
