@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express'
-import { uploads } from '../utils/fileUpload'
+import { uploadImgs } from '../utils/fileUpload'
 import { PrismaClient } from '@prisma/client';
 
 export const fileUpload = Router()
 const prisma = new PrismaClient()
 
-fileUpload.post('/file-upload', uploads.single('fileName'), async (req: Request, res: Response) => {
+fileUpload.post('/file-upload', uploadImgs.single('fileName'), async (req: Request, res: Response) => {
         try {
                 let photoPath = req?.file?.path
                 // console.log(photoPath)
