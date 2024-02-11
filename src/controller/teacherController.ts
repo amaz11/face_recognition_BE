@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import * as xlsx from 'xlsx'
 import prisma from '../utils/prisma'
 import randomestring from 'randomstring'
+import { Prisma } from '@prisma/client';
 
 interface UserData {
     name: string;
@@ -14,16 +15,17 @@ interface UserData {
 const processUserWithPassword = async (user: UserData[]) => {
     if (user) {
         const userWithPassword = await Promise.all(user?.map(createUserWithPassword))
-        console.log(userWithPassword);
-        // try {
-        //     await prisma.teachers.createMany({
-        //         data: ,
-        //         skipDuplicates: true,
-        //     })
+        // console.log(Array.isArray(userWithPassword));
+        try {
+            await Promise.all(userWithPassword.map(async (user: any) => {
+                await prisma.teachers.create({
+                    data: user
+                })
+            }))
 
-        // } catch (error) {
-        //     console.log(error);
-        // }
+        } catch (error) {
+            console.log(error);
+        }
     }
 
 }
@@ -32,10 +34,13 @@ const createUserWithPassword = async (user: UserData) => {
     try {
         const randomPassword = randomestring.generate(12)
         return {
-            ...user,
+
             name: user.name,
+            positions: user.positions,
             email: user.email,
             password: randomPassword,
+            phone: user.phone,
+            address: user.address
         };
     }
     catch (error) {

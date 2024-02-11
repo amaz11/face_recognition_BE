@@ -58,12 +58,12 @@ model exam_room {
 
 model teachers {
   id           Int            @id @default(autoincrement())
-  name         String         @db.VarChar(100)
-  positions    String         @db.VarChar(50)
-  email        String         @unique
-  password     String
-  phone        String         @db.Char(11)
-  address      String         @db.VarChar(100)
+  name         String?        @db.VarChar(100)
+  positions    String?        @db.VarChar(50)
+  email        String?        @unique
+  password     String?
+  phone        String?        @db.Char(11)
+  address      String?        @db.VarChar(100)
   teachers_log teachers_log[]
   createAt     DateTime       @default(now())
   updateAt     DateTime       @updatedAt
