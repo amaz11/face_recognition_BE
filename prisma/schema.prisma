@@ -31,30 +31,28 @@ model exams {
 }
 
 model exam_routine {
-  id        Int          @id @default(autoincrement())
-  examId    Int
-  exams     exams        @relation(fields: [examId], references: [id])
-  examTime  String
-  examDate  String
-  exam_hall exam_halls[]
-  createAt  DateTime     @default(now())
-  updateAt  DateTime     @updatedAt
+  id       Int      @id @default(autoincrement())
+  examId   Int
+  exams    exams    @relation(fields: [examId], references: [id])
+  examTime String
+  examDate String
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
 }
 
 model exam_halls {
-  id          Int          @id @default(autoincrement())
-  adress      String
-  routineId   Int
-  examRoutine exam_routine @relation(fields: [routineId], references: [id])
-  exam_room   exam_room[]
+  id         Int            @id @default(autoincrement())
+  address    String         @unique
+  teacherLog teachers_log[]
 }
 
-model exam_room {
-  id         Int        @id @default(autoincrement())
-  roomNo     String
-  examHallId Int
-  examHall   exam_halls @relation(fields: [examHallId], references: [id])
-}
+// model exam_room {
+//   id         Int            @id @default(autoincrement())
+//   roomNo     String         @unique
+//   examHallId Int
+//   examHall   exam_halls     @relation(fields: [examHallId], references: [id])
+//   teacher    teachers_log[]
+// }
 
 model teachers {
   id           Int            @id @default(autoincrement())
@@ -70,11 +68,17 @@ model teachers {
 }
 
 model teachers_log {
-  id        Int      @id @default(autoincrement())
-  teacherId Int
-  teacher   teachers @relation(fields: [teacherId], references: [id])
-  examId    Int
-  exams     exams    @relation(fields: [examId], references: [id])
+  id           Int         @id @default(autoincrement())
+  teacherId    Int
+  teacher      teachers    @relation(fields: [teacherId], references: [id])
+  examId       Int
+  exams        exams       @relation(fields: [examId], references: [id])
+  exam_halls   exam_halls? @relation(fields: [exam_hallsId], references: [id])
+  exam_hallsId Int?
+  exam_room    String
+  exam_date    String
+  exam_start   String
+  exam_end     String
 }
 
 model students {
