@@ -19,6 +19,10 @@ const errorHandler = (err: any, req: Request, res: Response, next: NextFunction)
         error = new errorResponse(error.message, 400);
     }
 
+    if (error.code === "P2002") {
+        error = new errorResponse(error.message, 400);
+    }
+
     if (error.code === "P2025") {
         const message = `Table ${error.meta.modelName} cause ${error.meta.cause}`
         error = new errorResponse(message, 400);
