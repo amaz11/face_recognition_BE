@@ -1,28 +1,25 @@
 import { Request, Response } from 'express'
-import * as xlsx from 'xlsx'
+import { importFromExcle } from '../utils/importFromExcle';
 import prisma from '../utils/prisma'
 import randomestring from 'randomstring'
-import { importFromExcle } from '../utils/importFromExcle';
-import { TeacherType } from '../types/teacher';
+import { StudentType } from '../types/student';
 
-const processUserWithPassword = async (userArr: TeacherType[]) => {
+const processUserWithPassword = async (userArr: StudentType[]) => {
     try {
         const userWithPassword = await Promise.all(userArr?.map(createUserWithPassword))
-        const users = await prisma.$transaction(userWithPassword.map((user: any) => prisma.teachers.upsert({
+        const users = await prisma.$transaction(userWithPassword.map((user: any) => prisma.students.upsert({
             where: {
                 email: user.email,
             },
             update: {
-                teachers_log: {
+                student_exam_log: {
                     create: {
-                        exams: {
-                            connect: {
-                                name: user.exam_name
-                            }
-                        },
                         exam_date: user.exam_date,
                         exam_start: user.exam_start,
                         exam_end: user.exam_end,
+                        exam_room: user.exam_room,
+                        registerNo: user.register_no,
+                        rollNo: user.roll_no,
                         exam_halls: {
                             connectOrCreate: {
                                 where: {
@@ -32,29 +29,29 @@ const processUserWithPassword = async (userArr: TeacherType[]) => {
                                     address: user.hall_address,
                                 }
                             },
-
                         },
-                        exam_room: user.room_duty
-                    },
+                        exams: {
+                            connect: {
+                                name: user.exam_name
+                            }
+                        }
+                    }
                 }
             },
             create: {
                 name: user.name,
                 email: user.email,
                 password: user.password,
-                positions: user.positions,
                 phone: user.phone,
                 address: user.address,
-                teachers_log: {
+                student_exam_log: {
                     create: {
-                        exams: {
-                            connect: {
-                                name: user.exam_name
-                            }
-                        },
                         exam_date: user.exam_date,
                         exam_start: user.exam_start,
                         exam_end: user.exam_end,
+                        exam_room: user.exam_room,
+                        registerNo: user.register_no,
+                        rollNo: user.roll_no,
                         exam_halls: {
                             connectOrCreate: {
                                 where: {
@@ -64,14 +61,17 @@ const processUserWithPassword = async (userArr: TeacherType[]) => {
                                     address: user.hall_address,
                                 }
                             },
-
                         },
-                        exam_room: user.room_duty
-                    },
+                        exams: {
+                            connect: {
+                                name: user.exam_name
+                            }
+                        }
+                    }
                 }
             },
             include: {
-                teachers_log: {
+                student_exam_log: {
                     include: {
                         exams: true,
                         exam_halls: true,
@@ -87,7 +87,7 @@ const processUserWithPassword = async (userArr: TeacherType[]) => {
 }
 
 
-const createUserWithPassword = async (user: TeacherType) => {
+const createUserWithPassword = async (user: StudentType) => {
     try {
         const randomPassword = randomestring.generate(12)
         const exam_name = user.exam_name.toLocaleUpperCase()
@@ -106,13 +106,13 @@ const createUserWithPassword = async (user: TeacherType) => {
     }
 }
 
-const createTeacher = async (req: Request, res: Response) => {
+
+const createStudents = async (req: Request, res: Response) => {
     let { exclePath } = req?.body
-    const users: TeacherType[] = importFromExcle(exclePath)
+    const users: StudentType[] = importFromExcle(exclePath)
     processUserWithPassword(users).then((data) => { res.json({ success: 'success', data: data }) }).catch(error => {
         console.error('Error processing users:', error);
     }).finally(async () => { await prisma.$disconnect() });
 }
 
-
-export { createTeacher }
+export { createStudents }

@@ -19,15 +19,15 @@ model exams_type {
 }
 
 model exams {
-  id           Int            @id @default(autoincrement())
-  name         String         @unique @db.VarChar(255)
-  examTypeId   Int
-  exam_type    exams_type     @relation(fields: [examTypeId], references: [id])
-  teachers_log teachers_log[]
-  students     students[]
-  createAt     DateTime       @default(now())
-  updateAt     DateTime       @updatedAt
-  exam_routine exam_routine[]
+  id               Int                @id @default(autoincrement())
+  name             String             @unique @db.VarChar(255)
+  examTypeId       Int
+  exam_type        exams_type         @relation(fields: [examTypeId], references: [id])
+  teachers_log     teachers_log[]
+  createAt         DateTime           @default(now())
+  updateAt         DateTime           @updatedAt
+  exam_routine     exam_routine[]
+  student_exam_log student_exam_log[]
 }
 
 model exam_routine {
@@ -41,9 +41,10 @@ model exam_routine {
 }
 
 model exam_halls {
-  id         Int            @id @default(autoincrement())
-  address    String         @unique
-  teacherLog teachers_log[]
+  id               Int                @id @default(autoincrement())
+  address          String             @unique
+  teacherLog       teachers_log[]
+  student_exam_log student_exam_log[]
 }
 
 // model exam_room {
@@ -86,16 +87,32 @@ model students {
   name               String                  @db.VarChar(100)
   email              String                  @unique
   address            String                  @db.VarChar(100)
+  password           String
+  phone              String                  @db.VarChar(11)
   registretionDone   Boolean                 @default(false)
   varify             Boolean                 @default(false)
-  examId             Int
-  exams              exams                   @relation(fields: [examId], references: [id])
-  rollNo             String
-  registerNo         String
   studentsFaceVector students_face_vectors[]
   student_exam_log   student_exam_log[]
   createAt           DateTime                @default(now())
   updateAt           DateTime                @updatedAt
+}
+
+model student_exam_log {
+  id           Int        @id @default(autoincrement())
+  studentId    Int
+  student      students   @relation(fields: [studentId], references: [id])
+  examId       Int
+  exams        exams      @relation(fields: [examId], references: [id])
+  rollNo       String
+  registerNo   String
+  exam_halls   exam_halls @relation(fields: [exam_hallsId], references: [id])
+  exam_hallsId Int
+  exam_room    String
+  exam_date    String
+  exam_start   String
+  exam_end     String
+  createAt     DateTime   @default(now())
+  updateAt     DateTime   @updatedAt
 }
 
 model students_face_vectors {
@@ -104,12 +121,6 @@ model students_face_vectors {
   studentId  Int
   student    students @relation(fields: [studentId], references: [id])
   createAt   DateTime @default(now())
-}
-
-model student_exam_log {
-  id        Int      @id @default(autoincrement())
-  studentId Int
-  student   students @relation(fields: [studentId], references: [id])
 }
 
 model photo_path {
