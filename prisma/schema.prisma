@@ -57,12 +57,13 @@ model exam_halls {
 
 model teachers {
   id           Int            @id @default(autoincrement())
-  name         String?        @db.VarChar(100)
-  positions    String?        @db.VarChar(50)
-  email        String?        @unique
-  password     String?
-  phone        String?        @db.Char(11)
-  address      String?        @db.VarChar(100)
+  name         String         @db.VarChar(100)
+  positions    String         @db.VarChar(50)
+  email        String         @unique
+  password     String
+  phone        String         @db.Char(11)
+  address      String         @db.VarChar(100)
+  first_login  Boolean        @default(true)
   teachers_log teachers_log[]
   createAt     DateTime       @default(now())
   updateAt     DateTime       @updatedAt
@@ -89,6 +90,7 @@ model students {
   address            String                  @db.VarChar(100)
   password           String
   phone              String                  @db.VarChar(11)
+  first_login        Boolean                 @default(true)
   registretionDone   Boolean                 @default(false)
   varify             Boolean                 @default(false)
   studentsFaceVector students_face_vectors[]

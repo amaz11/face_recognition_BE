@@ -3,6 +3,8 @@ import { importFromExcle } from '../utils/importFromExcle';
 import prisma from '../utils/prisma'
 import randomestring from 'randomstring'
 import { StudentType } from '../types/student';
+import { compare, hash } from 'bcryptjs'
+import { tokenGenerator } from '../utils/jwtToken';
 
 const processUserWithPassword = async (userArr: StudentType[]) => {
     try {
@@ -115,4 +117,71 @@ const createStudents = async (req: Request, res: Response) => {
     }).finally(async () => { await prisma.$disconnect() });
 }
 
-export { createStudents }
+
+const loginStudent = async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(403).json({ ok: false, message: "Please fill the form" })
+    }
+    const user = await prisma.students.findUnique({
+        where: {
+            email
+        }
+    })
+
+    if (!user) {
+        return res.status(403).json({ ok: false, message: "Invalid email or password" })
+    }
+
+    const comparePassword = await compare(password, user.password);
+
+    if (user.password === password || comparePassword) {
+        const token = tokenGenerator(user)
+        const userWithoutPassword = {
+            ...user,
+            password: ''
+        }
+        return res.status(200).json({ ok: true, message: 'susccess', data: userWithoutPassword, token: token })
+    }
+
+    return res.status(403).json({ ok: false, message: "Invalid email or password" })
+
+
+}
+
+const updatePassword = async (req: Request, res: Response) => {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const id = (req as any).user.id
+    if (!oldPassword || !newPassword || !confirmPassword) {
+        return res.status(403).json({ ok: false, message: "Please fill the form" })
+    }
+    const user = await prisma.students.findUnique({
+        where: {
+            id
+        }
+    })
+
+    const comparePassword = await compare(oldPassword, user!.password);
+
+    if (user!.password === oldPassword || comparePassword) {
+
+        if (newPassword !== confirmPassword) {
+            return res.status(200).json({ ok: true, message: 'Password do not match' })
+        }
+
+        const passwordBcrypt = await hash(newPassword, 10)
+        await prisma.students.update({
+            where: {
+                id
+            },
+            data: {
+                password: passwordBcrypt,
+                first_login: false,
+            }
+        })
+        return res.status(200).json({ ok: true, message: 'susccess' })
+    }
+
+}
+
+export { createStudents, loginStudent, updatePassword }
