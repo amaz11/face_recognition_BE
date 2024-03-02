@@ -12,3 +12,4 @@ export interface TeacherType {
     exam_end: string;
     hall_address: string
 }
+

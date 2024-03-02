@@ -6,6 +6,7 @@ import { importFromExcle } from '../utils/importFromExcle';
 import { TeacherType } from '../types/teacher';
 import { compare, hash } from 'bcryptjs'
 import { tokenGenerator } from '../utils/jwtToken';
+import { StudentQueryParams } from '../types/student';
 
 const processUserWithPassword = async (userArr: TeacherType[]) => {
     try {
@@ -93,6 +94,7 @@ const createUserWithPassword = async (user: TeacherType) => {
     try {
         const randomPassword = randomestring.generate(12)
         const exam_name = user.exam_name.toLocaleUpperCase()
+
         // const exam_name = userData.exam_name.toLocaleUpperCase()
 
         return {
@@ -170,7 +172,7 @@ const updatePassword = async (req: Request, res: Response) => {
         }
 
         const passwordBcrypt = await hash(newPassword, 10)
-        await prisma.students.update({
+        await prisma.teachers.update({
             where: {
                 id
             },
@@ -181,7 +183,22 @@ const updatePassword = async (req: Request, res: Response) => {
         })
         return res.status(200).json({ ok: true, message: 'susccess' })
     }
+    return res.status(404).json({ ok: false, message: "Invalid password" })
 
 }
 
-export { createTeacher, loginTeacher, updatePassword }
+const getStudentsByRoom = async (req: Request, res: Response) => {
+    const { roomNo, hall_address, date }: StudentQueryParams = req.query as unknown as StudentQueryParams
+    const data = await prisma.student_exam_log.findMany({
+        where: {
+            exam_date: date,
+            exam_room: roomNo,
+            exam_halls: {
+                address: hall_address.toLocaleUpperCase()
+            }
+        }
+    })
+    res.status(200).json({ data })
+}
+
+export { createTeacher, loginTeacher, updatePassword, getStudentsByRoom }

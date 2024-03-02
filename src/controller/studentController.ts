@@ -8,7 +8,7 @@ import { tokenGenerator } from '../utils/jwtToken';
 
 const processUserWithPassword = async (userArr: StudentType[]) => {
     try {
-        const userWithPassword = await Promise.all(userArr?.map(createUserWithPassword))
+        const userWithPassword = await Promise.all(userArr.map(createUserWithPassword))
         const users = await prisma.$transaction(userWithPassword.map((user: any) => prisma.students.upsert({
             where: {
                 email: user.email,
@@ -83,6 +83,7 @@ const processUserWithPassword = async (userArr: StudentType[]) => {
         })))
 
         return users
+
     } catch (error) {
         return error
     }
@@ -93,12 +94,11 @@ const createUserWithPassword = async (user: StudentType) => {
     try {
         const randomPassword = randomestring.generate(12)
         const exam_name = user.exam_name.toLocaleUpperCase()
-        // const exam_name = userData.exam_name.toLocaleUpperCase()
 
         return {
             ...user,
             password: randomPassword,
-            exam_name
+            exam_name,
         }
 
 
@@ -107,6 +107,7 @@ const createUserWithPassword = async (user: StudentType) => {
         return error
     }
 }
+
 
 
 const createStudents = async (req: Request, res: Response) => {
@@ -181,7 +182,7 @@ const updatePassword = async (req: Request, res: Response) => {
         })
         return res.status(200).json({ ok: true, message: 'susccess' })
     }
-
+    return res.status(404).json({ ok: false, message: "Invalid password" })
 }
 
 export { createStudents, loginStudent, updatePassword }
