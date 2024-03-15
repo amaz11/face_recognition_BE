@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `admin` ADD COLUMN `role` ENUM('SUPERADMIN', 'ADMIN') NOT NULL DEFAULT 'ADMIN';
+
+-- AlterTable
+ALTER TABLE `exams_type` ALTER COLUMN `updateAt` DROP DEFAULT;

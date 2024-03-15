@@ -129,3 +129,18 @@ model photo_path {
   id   Int    @id @default(autoincrement())
   path String
 }
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+}
+
+model admin {
+  id       Int    @id @default(autoincrement())
+  name     String @db.VarChar(100)
+  email    String @unique
+  address  String @db.VarChar(100)
+  password String
+  phone    String @db.VarChar(11)
+  role     Role   @default(ADMIN)
+}

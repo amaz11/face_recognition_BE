@@ -201,4 +201,11 @@ const getStudentsByRoom = async (req: Request, res: Response) => {
     res.status(200).json({ data })
 }
 
-export { createTeacher, loginTeacher, updatePassword, getStudentsByRoom }
+const refreshToken = async (req: Request, res: Response) => {
+    const user = (req as any).user
+    const token = tokenGenerator(user)
+    return res.status(200).json({ ok: true, message: 'susccess', token })
+
+}
+
+export { createTeacher, loginTeacher, updatePassword, getStudentsByRoom, refreshToken }

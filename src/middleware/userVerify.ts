@@ -11,7 +11,7 @@ export const teacherVerify = async (req: Request, res: Response, next: NextFunct
             return res.status(401).json({ error: "Unauthorized - No Token Provided" });
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET_KEY);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY!);
 
         if (!decoded) {
             return res.status(401).json({ error: "Unauthorized - Invalid Token" });
@@ -48,7 +48,7 @@ export const studentVerify = async (req: Request, res: Response, next: NextFunct
             return res.status(401).json({ error: "Unauthorized - No Token Provided" });
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET_KEY);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY!);
 
         if (!decoded) {
             return res.status(401).json({ error: "Unauthorized - Invalid Token" });
@@ -71,6 +71,48 @@ export const studentVerify = async (req: Request, res: Response, next: NextFunct
 
         (req as any).user = user;
         next()
+
+    } catch (error) {
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+export const adminVerify = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const token = req.headers.authorization?.split("Bearer ")[1];
+
+        if (!token) {
+            return res.status(401).json({ error: "Unauthorized - No Token Provided" });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY!);
+
+        if (!decoded) {
+            return res.status(401).json({ error: "Unauthorized - Invalid Token" });
+        }
+
+        const user = await prisma.admin.findUnique({
+            where: {
+                id: (decoded as any).id,
+            },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        if (user.role.toLocaleLowerCase() === "admin") {
+            (req as any).user = user;
+            next()
+        } else {
+            return res.status(401).json({ error: "Unauthorized or Invalid Token" });
+        }
+
 
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });

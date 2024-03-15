@@ -185,4 +185,11 @@ const updatePassword = async (req: Request, res: Response) => {
     return res.status(404).json({ ok: false, message: "Invalid password" })
 }
 
-export { createStudents, loginStudent, updatePassword }
+const refreshToken = async (req: Request, res: Response) => {
+    const user = (req as any).user
+    const token = tokenGenerator(user)
+    return res.status(200).json({ ok: true, message: 'susccess', token })
+
+}
+
+export { createStudents, loginStudent, updatePassword, refreshToken }
