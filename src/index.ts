@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from "express";
+import express, { Express } from "express";
 import cors from 'cors'
 import compression from "compression";
 import cookieParser from "cookie-parser";
