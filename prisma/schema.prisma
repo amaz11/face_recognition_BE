@@ -119,7 +119,7 @@ model student_exam_log {
 
 model students_face_vectors {
   id         Int      @id @default(autoincrement())
-  faceVector String
+  faceVector String   @db.LongText
   studentId  Int
   student    students @relation(fields: [studentId], references: [id])
   createAt   DateTime @default(now())

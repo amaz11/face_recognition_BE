@@ -18,3 +18,27 @@ export interface StudentQueryParams {
     hall_address: string;
     date: string;
 }
+
+export type StudentUser = StudentInterFace[]
+
+export interface StudentInterFace {
+    id: number
+    faceVector: string
+    studentId: number
+    createAt: string
+    student: Student
+}
+
+export interface Student {
+    id: number
+    name: string
+    email: string
+    address: string
+    password: string
+    phone: string
+    first_login: boolean
+    registretionDone: boolean
+    varify: boolean
+    createAt: string
+    updateAt: string
+}

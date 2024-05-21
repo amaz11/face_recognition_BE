@@ -5,6 +5,9 @@ import randomestring from 'randomstring'
 import { StudentType } from '../types/student';
 import { compare, hash } from 'bcryptjs'
 import { tokenGenerator } from '../utils/jwtToken';
+import * as faceapi from 'face-api.js';
+import canvas from 'canvas';
+import path from "path";
 
 const processUserWithPassword = async (userArr: StudentType[]) => {
     try {
@@ -192,4 +195,76 @@ const refreshToken = async (req: Request, res: Response) => {
 
 }
 
-export { createStudents, loginStudent, updatePassword, refreshToken }
+const createLandmark = async (req: Request, res: Response) => {
+    const { imagePath } = req.body; // Get the path of the uploaded image file
+    const id = (req as any).user.id
+    if (!imagePath) {
+        return res.status(403).json({ ok: false, message: "Image path is invalid" })
+    }
+
+    try {
+        const img = await canvas.loadImage(path.join(__dirname, '../..', imagePath)); // Load image from the specified path
+        const detection: any = await faceapi.detectSingleFace(img)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+        if (!detection) {
+            res.status(403).json({ ok: false, message: "Provide Valid Image" })
+        }
+        const descriptor = JSON.stringify(detection.descriptor);
+        const userFaceDescriptor = await prisma.students_face_vectors.create({
+            data: {
+                studentId: id,
+                faceVector: descriptor
+            }
+        })
+        res.status(200).json(userFaceDescriptor);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error processing image');
+    }
+}
+
+const faceRecognition = async (req: Request, res: Response) => {
+    const { imagePath } = req.body; // Get the path of the uploaded image file
+    const id = (req as any).user.id
+    const users = await prisma.students_face_vectors.findMany({
+        where: {
+            studentId: id,
+        },
+        include: {
+            student: true
+        }
+    })
+    // const student: StudentUser = user
+
+    try {
+        const img = await canvas.loadImage(path.join(__dirname, '../..', imagePath)); // Load image from the specified path
+        const detection: any = await faceapi.detectSingleFace(img)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+        if (!detection) {
+            return res.status(400).send('No face detected.');
+        }
+
+        const labeledDescriptors = users.map((user: any) => {
+            const descriptor = JSON.parse(user.faceVector);
+            const descriptorArray: any = Object.values(descriptor);
+            const float32ArrayDescriptor = new Float32Array(descriptorArray);
+            return new faceapi.LabeledFaceDescriptors(user.student.name, [float32ArrayDescriptor]);
+        });
+
+        // console.log(labeledDescriptors);
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors);
+        const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+        res.status(200).json({ bestMatch })
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error processing image');
+    }
+
+}
+
+export { createStudents, loginStudent, updatePassword, refreshToken, createLandmark, faceRecognition }

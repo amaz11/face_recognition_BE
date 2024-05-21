@@ -9,7 +9,8 @@ const fileStore = multer.diskStorage({
         callback(null, './upload');
     },
     filename: (req: Request, file, callback) => {
-        callback(null, new Date().toISOString().replace(/:/g, "-") + file.originalname)
+        // console.log(file.originalname.replace(/[^\w.-]/g, ' '));
+        callback(null, new Date().toISOString().replace(/:/g, "-") + file.originalname.replace(/[^\w.-]/g, ' '))
     }
 })
 
@@ -39,7 +40,7 @@ const fileStoreExcel = multer.diskStorage({
         callback(null, './upload/file');
     },
     filename: (req: Request, file, callback) => {
-        callback(null, new Date().toISOString().replace(/:/g, "-") + file.originalname)
+        callback(null, new Date().toISOString().replace(/:/g, "-") + file.originalname.trim())
     }
 })
 
