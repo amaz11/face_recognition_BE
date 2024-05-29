@@ -18,7 +18,8 @@ const fileStore = multer.diskStorage({
 const fileFilter = (req: Request, file: any, callback: FileFilterCallback) => {
     if (file.mimetype === "image/png" ||
         file.mimetype === "image/jpg" ||
-        file.mimetype === "image/jpeg") {
+        file.mimetype === "image/jpeg" ||
+        file.mimetype === "application/octet-stream") {
         callback(null, true);
     }
     else {
@@ -51,7 +52,7 @@ const fileFilterExcel = (req: Request, file: any, callback: FileFilterCallback) 
         callback(null, true);
     }
     else {
-        console.log("This is Not image file");
+        console.log("This is Not excel file");
         callback(null, false);
     }
 }

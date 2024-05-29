@@ -24,7 +24,7 @@ app.use(cookieParser())
 app.use(cors())
 
 // file upload directions
-app.use('/uploads', express.static(path.join(__dirname, '../upload')));
+app.use('/upload', express.static(path.join(__dirname, '../upload')));
 
 // Setup canvas for face-api.js
 const { Canvas, Image, ImageData } = canvas;
@@ -46,8 +46,8 @@ app.use(errorHandler)
 
 
 const port = process.env.PORT;
-const server = app.listen(port, async () => {
-    await loadModels();
+const server = app.listen(port, () => {
+    // await loadModels();
     console.log(`http://localhost:${port}`)
 })
 

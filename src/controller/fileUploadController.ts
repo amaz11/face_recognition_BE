@@ -7,6 +7,9 @@ const excleFilePath = async (req: Request, res: Response) => {
 }
 
 const imageFilePath = async (req: Request, res: Response) => {
+    if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded or invalid file type" });
+    }
     let imagePath = req?.file?.path
     return res.status(201).json({ imagePath })
 }
