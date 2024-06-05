@@ -226,6 +226,32 @@ const createLandmark = async (req: Request, res: Response) => {
     }
 }
 
+const faceDescriptor = async (req: Request, res: Response) => {
+    const { faceVector } = req.body
+    const id = (req as any).user.id
+    const faceVectorToString = faceVector.toString()
+    const newFaceDescriptor = await prisma.students_face_vectors.create({
+        data: {
+            faceVector: faceVectorToString,
+            studentId: id,
+        }
+    })
+    return res.status(201).json(newFaceDescriptor)
+}
+
+const postImagePaths = async (req: Request, res: Response) => {
+    const { faceVector } = req.body
+    const id = (req as any).user.id
+    const newFaceDescriptor = await prisma.students_face_vectors.create({
+        data: {
+            faceVector: faceVector,
+            studentId: id,
+        }
+    })
+    return res.status(201).json(newFaceDescriptor)
+}
+
+
 const faceRecognition = async (req: Request, res: Response) => {
     const { imagePath } = req.body; // Get the path of the uploaded image file
     const id = (req as any).user.id
@@ -267,4 +293,5 @@ const faceRecognition = async (req: Request, res: Response) => {
 
 }
 
-export { createStudents, loginStudent, updatePassword, refreshToken, createLandmark, faceRecognition }
+
+export { createStudents, loginStudent, updatePassword, refreshToken, createLandmark, faceRecognition, faceDescriptor, postImagePaths }

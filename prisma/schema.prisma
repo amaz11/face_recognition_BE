@@ -97,6 +97,7 @@ model students {
   student_exam_log   student_exam_log[]
   createAt           DateTime                @default(now())
   updateAt           DateTime                @updatedAt
+  photo_path         photo_path[]
 }
 
 model student_exam_log {
@@ -126,8 +127,10 @@ model students_face_vectors {
 }
 
 model photo_path {
-  id   Int    @id @default(autoincrement())
-  path String
+  id        Int      @id @default(autoincrement())
+  path      String
+  studentId Int
+  student   students @relation(fields: [studentId], references: [id])
 }
 
 enum Role {
