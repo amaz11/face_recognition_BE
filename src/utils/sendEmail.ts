@@ -1,19 +1,23 @@
 import nodemailer from "nodemailer";
-export const sendEmail = async (email: string, password: string) => {
+import dotenv from 'dotenv'
+dotenv.config();
+
+export const sendEmail = async (email: string, subject: string) => {
     let transporter = nodemailer.createTransport({
-        host: 'smtp.example.com',
-        port: 587,
+        host: process.env.SMPT_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587', 10),
+        service: process.env.SMPT_SERVICE,
         secure: false, // true for 465, false for other ports
         auth: {
-            user: 'your_email@example.com', // Your email address
-            pass: 'your_password', // Your email password
+            user: process.env.SMPT_MAIL, // Your email address
+            pass: process.env.SMPT_PASSWORD, // Your email password
         },
     });
 
     await transporter.sendMail({
-        from: '"Your Name" <your_email@example.com>',
+        from: process.env.SMPT_MAIL,
         to: email,
-        subject: 'Your Credentials',
-        text: `Here are your login credentials:\nEmail: ${email}\nPassword: ${password}`,
+        subject: 'FaceRecognition base Exam',
+        text: subject,
     });
 }

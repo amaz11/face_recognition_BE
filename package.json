@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon"
+    "start": "nodemon",
+    "start:worker": "ts-node src/worker.ts"
   },
   "keywords": [],
   "author": "",
@@ -22,13 +23,13 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@tsed/multipartfiles": "^5.65.9",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/multer": "^1.4.7",
     "@types/nodemailer": "^6.4.14",
     "@types/randomstring": "^1.1.11",
     "bcryptjs": "^2.4.3",
+    "bullmq": "^5.7.15",
     "canvas": "^2.11.2",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",

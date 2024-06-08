@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { importFromExcle } from '../utils/importFromExcle';
 import prisma from '../utils/prisma'
 import randomestring from 'randomstring'
@@ -8,6 +8,11 @@ import { tokenGenerator } from '../utils/jwtToken';
 import * as faceapi from 'face-api.js';
 import canvas from 'canvas';
 import path from "path";
+import { emailQueue } from '../index';
+import erroResponse from '../utils/ErrorResponse';
+import crypto from 'crypto'
+import { sendEmail } from '../utils/sendEmail';
+import jwt from 'jsonwebtoken'
 
 const processUserWithPassword = async (userArr: StudentType[]) => {
     try {
@@ -77,6 +82,9 @@ const processUserWithPassword = async (userArr: StudentType[]) => {
             },
             include: {
                 student_exam_log: {
+                    orderBy: {
+                        id: 'desc'
+                    },
                     include: {
                         exams: true,
                         exam_halls: true,
@@ -85,6 +93,15 @@ const processUserWithPassword = async (userArr: StudentType[]) => {
             }
         })))
 
+        const emailSendJobs = users.map((user) => {
+            if (user.first_login === true) {
+                return { name: 'sendEmail', data: { email: user.email, subject: `Here are your login credentials:\nEmail: ${user.email}\nPassword: ${user.password}` }, opts: { removeOnComplete: true } }
+            }
+            else {
+                return { name: 'sendEmail', data: { email: user.email, subject: `Student, Your ${user.student_exam_log[0].exams.name} Exam will be held on ${user.student_exam_log[0].exam_date}. For more details login in app with previous credentials.` }, opts: { removeOnComplete: true } }
+            }
+        })
+        emailQueue.addBulk(emailSendJobs)
         return users
 
     } catch (error) {
@@ -294,4 +311,61 @@ const faceRecognition = async (req: Request, res: Response) => {
 }
 
 
-export { createStudents, loginStudent, updatePassword, refreshToken, createLandmark, faceRecognition, faceDescriptor, postImagePaths }
+// Forgot Password / routes /forget/password
+const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+    const user = await prisma.students.findUnique({
+        where: {
+            email: req.body.email
+        }
+    });
+    if (!user) {
+        return next(new erroResponse("User Not Fouund", 400));
+    }
+
+    const resetToken = tokenGenerator(user)
+    const resetPasswordUrl = `${req.protocol}://${req.get(
+        "host"
+    )}/password-reset/${resetToken}`;
+
+    const message = `Your Reset url: \n\n ${resetPasswordUrl} \n\n If not then ignor it `;
+    try {
+        await sendEmail(user.email, message);
+
+        return res.status(200).json({
+            success: true,
+            message: `Email send to ${user.email} successfully`,
+        });
+    } catch (error: any) {
+
+        return next(new erroResponse(error.massage, 500));
+    }
+};
+
+
+//reset Password // routes /password/reset/:token
+const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+    // creating token hash
+    const decoded = jwt.verify(req.params.token, process.env.JWT_SECRET_KEY!);
+    if (!decoded) {
+        return res.status(401).json({ error: "Unauthorized - Invalid Token" });
+    }
+
+    if (req.body.password !== req.body.conpassword) {
+        return next(new erroResponse("Password not match", 400));
+    }
+    const passwordBcrypt = await hash(req.body.password, 10)
+
+    await prisma.students.update({
+        where: {
+            id: (decoded as any).id,
+        },
+        data: {
+            password: passwordBcrypt,
+            first_login: false,
+        }
+    })
+    return res.status(200).json({ ok: true, message: 'susccess' })
+};
+
+
+export { createStudents, loginStudent, updatePassword, refreshToken, createLandmark, faceRecognition, faceDescriptor, postImagePaths, forgotPassword, resetPassword }
