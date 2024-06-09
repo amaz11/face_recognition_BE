@@ -109,7 +109,6 @@ const processUserWithPassword = async (userArr: StudentType[]) => {
     }
 }
 
-
 const createUserWithPassword = async (user: StudentType) => {
     try {
         const randomPassword = randomestring.generate(12)
@@ -128,8 +127,6 @@ const createUserWithPassword = async (user: StudentType) => {
     }
 }
 
-
-
 const createStudents = async (req: Request, res: Response) => {
     let { exclePath } = req?.body
     const users: StudentType[] = importFromExcle(exclePath)
@@ -137,7 +134,6 @@ const createStudents = async (req: Request, res: Response) => {
         console.error('Error processing users:', error);
     }).finally(async () => { await prisma.$disconnect() });
 }
-
 
 const loginStudent = async (req: Request, res: Response) => {
     const { email, password } = req.body;
@@ -268,7 +264,6 @@ const postImagePaths = async (req: Request, res: Response) => {
     return res.status(201).json(newFaceDescriptor)
 }
 
-
 const faceRecognition = async (req: Request, res: Response) => {
     const { imagePath } = req.body; // Get the path of the uploaded image file
     const id = (req as any).user.id
@@ -310,7 +305,6 @@ const faceRecognition = async (req: Request, res: Response) => {
 
 }
 
-
 // Forgot Password / routes /forget/password
 const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
     const user = await prisma.students.findUnique({
@@ -341,7 +335,6 @@ const forgotPassword = async (req: Request, res: Response, next: NextFunction) =
     }
 };
 
-
 //reset Password // routes /password/reset/:token
 const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
     // creating token hash
@@ -366,6 +359,5 @@ const resetPassword = async (req: Request, res: Response, next: NextFunction) =>
     })
     return res.status(200).json({ ok: true, message: 'susccess' })
 };
-
 
 export { createStudents, loginStudent, updatePassword, refreshToken, createLandmark, faceRecognition, faceDescriptor, postImagePaths, forgotPassword, resetPassword }
