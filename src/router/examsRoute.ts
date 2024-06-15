@@ -6,6 +6,7 @@ export const examsRouter = Router()
 
 examsRouter
     .post('/', adminVerify, examsPost)
+    .get('/all', examsAllGet)
     .get('/', adminVerify, examsAllGet)
     .get('/:id', adminVerify, examsGet)
     .put('/:id', adminVerify, examsPut)
