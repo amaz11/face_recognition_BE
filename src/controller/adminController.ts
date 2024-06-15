@@ -115,7 +115,11 @@ const getStudentByExam = async (req: Request, res: Response) => {
     examId = Number(examId)
     const data = await prisma.student_exam_log.findMany({
         where: {
-            examId
+            exam_log: {
+                exam: {
+                    id: examId
+                }
+            }
         }
     })
     res.status(200).json({ ok: true, message: 'susccess', data, count: data.length })
@@ -126,7 +130,11 @@ const getTeacherByExam = async (req: Request, res: Response) => {
     examId = Number(examId)
     const data = await prisma.teachers_log.findMany({
         where: {
-            examId
+            exam_log: {
+                exam: {
+                    id: examId
+                }
+            }
         }
     })
     res.status(200).json({ ok: true, message: 'susccess', data, count: data.length })

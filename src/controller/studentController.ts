@@ -137,7 +137,8 @@ import jwt from 'jsonwebtoken'
 // }
 
 const signupStudent = async (req: Request, res: Response, next: NextFunction) => {
-    const { name, email, password, conpassword, address, phone } = req.body;
+    const { name, email, password, conpassword, address, phone } = await req.body;
+    console.log(req.body);
     if (!name || !email || !password || !conpassword || !address || !phone) {
         return next(new erroResponse("Fill The Form", 400));
     }
@@ -145,9 +146,9 @@ const signupStudent = async (req: Request, res: Response, next: NextFunction) =>
     if (password !== conpassword) {
         return next(new erroResponse("Password And confirm Password don't match", 400));
     }
-    const decoded = jwt.verify(req.params.token, process.env.JWT_SECRET_KEY!);
+    const decoded = jwt.verify(req.params.token.toString(), process.env.JWT_SECRET_KEY!);
     if (!decoded) {
-        return res.status(401).json({ error: "Invalid Token" });
+        return res.status(400).json({ error: "Invalid Token" });
     }
 
     const findStudent = await prisma.students.findUnique({
@@ -172,7 +173,17 @@ const signupStudent = async (req: Request, res: Response, next: NextFunction) =>
                 }
             },
             select: {
-                password: false
+                id: true,
+                name: true,
+                email: true,
+                address: true,
+                password: false,
+                phone: true,
+                first_login: true,
+                registretionDone: true,
+                varify: true,
+                createAt: true,
+                updateAt: true,
             }
         })
         return res.status(201).json({ ok: true, message: "success", data: student })
@@ -186,7 +197,7 @@ const signupStudent = async (req: Request, res: Response, next: NextFunction) =>
 
 const existingStudentExam = async (req: Request, res: Response, next: NextFunction) => {
     const { email } = req.body
-    const decoded = jwt.verify(req.params.token, process.env.JWT_SECRET_KEY!);
+    const decoded = jwt.verify(req.params.token.toString(), process.env.JWT_SECRET_KEY!);
     if (!decoded) {
         return res.status(401).json({ error: "Invalid Token" });
     }
@@ -225,13 +236,31 @@ const existingStudentExam = async (req: Request, res: Response, next: NextFuncti
 }
 
 const loginStudent = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+    const { email, password, examId } = req.body;
     if (!email || !password) {
         return res.status(403).json({ ok: false, message: "Please fill the form" })
     }
     const user = await prisma.students.findUnique({
         where: {
-            email
+            email,
+        },
+        include: {
+            student_exam_log: {
+                where: {
+                    exam_log: {
+                        exam: {
+                            id: examId
+                        }
+                    }
+                },
+                include: {
+                    exam_log: {
+                        include: {
+                            exam: true
+                        }
+                    }
+                }
+            }
         }
     })
 
@@ -241,7 +270,7 @@ const loginStudent = async (req: Request, res: Response) => {
 
     const comparePassword = await compare(password, user.password);
 
-    if (user.password === password || comparePassword) {
+    if (comparePassword) {
         const token = tokenGenerator(user)
         const userWithoutPassword = {
             ...user,
@@ -253,6 +282,25 @@ const loginStudent = async (req: Request, res: Response) => {
     return res.status(403).json({ ok: false, message: "Invalid email or password" })
 
 
+}
+
+const profiledasboard = async (req: Request, res: Response) => {
+    const exam = req.body
+    const id = (req as any).user.id
+    const student = await prisma.students.findUnique({
+        where: {
+            id,
+            student_exam_log: {
+                every: {
+                    exam_log: {
+                        exam: {
+                            id: exam.examId
+                        }
+                    }
+                }
+            }
+        }
+    })
 }
 
 const updatePassword = async (req: Request, res: Response) => {
@@ -453,5 +501,5 @@ const resetPassword = async (req: Request, res: Response, next: NextFunction) =>
 };
 
 export { //createStudents, 
-    signupStudent, existingStudentExam, loginStudent, updatePassword, refreshToken, createLandmark, faceRecognition, faceDescriptor, postImagePaths, forgotPassword, resetPassword
+    signupStudent, existingStudentExam, loginStudent, updatePassword, refreshToken, createLandmark, faceRecognition, faceDescriptor, postImagePaths, forgotPassword, resetPassword, profiledasboard
 }
