@@ -3,7 +3,7 @@ import { importFromExcle } from '../utils/importFromExcle';
 import prisma from '../utils/prisma'
 import randomestring from 'randomstring'
 import { StudentType } from '../types/student';
-import { compare, hash } from 'bcryptjs'
+import { compare, genSalt, hash } from 'bcryptjs'
 import { tokenGenerator } from '../utils/jwtToken';
 import * as faceapi from 'face-api.js';
 import canvas from 'canvas';
@@ -14,125 +14,214 @@ import crypto from 'crypto'
 import { sendEmail } from '../utils/sendEmail';
 import jwt from 'jsonwebtoken'
 
-const processUserWithPassword = async (userArr: StudentType[]) => {
-    try {
-        const userWithPassword = await Promise.all(userArr.map(createUserWithPassword))
-        const users = await prisma.$transaction(userWithPassword.map((user: any) => prisma.students.upsert({
-            where: {
-                email: user.email,
-            },
-            update: {
-                student_exam_log: {
-                    create: {
-                        exam_date: user.exam_date,
-                        exam_start: user.exam_start,
-                        exam_end: user.exam_end,
-                        exam_room: user.exam_room,
-                        registerNo: user.register_no,
-                        rollNo: user.roll_no,
-                        exam_halls: {
-                            connectOrCreate: {
-                                where: {
-                                    address: user.hall_address,
-                                },
-                                create: {
-                                    address: user.hall_address,
-                                }
-                            },
-                        },
-                        exams: {
-                            connect: {
-                                name: user.exam_name
-                            }
-                        }
-                    }
-                }
-            },
-            create: {
-                name: user.name,
-                email: user.email,
-                password: user.password,
-                phone: user.phone,
-                address: user.address,
-                student_exam_log: {
-                    create: {
-                        exam_date: user.exam_date,
-                        exam_start: user.exam_start,
-                        exam_end: user.exam_end,
-                        exam_room: user.exam_room,
-                        registerNo: user.register_no,
-                        rollNo: user.roll_no,
-                        exam_halls: {
-                            connectOrCreate: {
-                                where: {
-                                    address: user.hall_address,
-                                },
-                                create: {
-                                    address: user.hall_address,
-                                }
-                            },
-                        },
-                        exams: {
-                            connect: {
-                                name: user.exam_name
-                            }
-                        }
-                    }
-                }
-            },
-            include: {
-                student_exam_log: {
-                    orderBy: {
-                        id: 'desc'
-                    },
-                    include: {
-                        exams: true,
-                        exam_halls: true,
-                    }
-                }
-            }
-        })))
 
-        const emailSendJobs = users.map((user) => {
-            if (user.first_login === true) {
-                return { name: 'sendEmail', data: { email: user.email, subject: `Here are your login credentials:\nEmail: ${user.email}\nPassword: ${user.password}` }, opts: { removeOnComplete: true } }
-            }
-            else {
-                return { name: 'sendEmail', data: { email: user.email, subject: `Student, Your ${user.student_exam_log[0].exams.name} Exam will be held on ${user.student_exam_log[0].exam_date}. For more details login in app with previous credentials.` }, opts: { removeOnComplete: true } }
+// const processUserWithPassword = async (userArr: StudentType[]) => {
+//     try {
+//         const userWithPassword = await Promise.all(userArr.map(createUserWithPassword))
+//         const users = await prisma.$transaction(userWithPassword.map((user: any) => prisma.students.upsert({
+//             where: {
+//                 email: user.email,
+//             },
+//             update: {
+//                 student_exam_log: {
+//                     create: {
+//                         exam_date: user.exam_date,
+//                         exam_start: user.exam_start,
+//                         exam_end: user.exam_end,
+//                         exam_room: user.exam_room,
+//                         registerNo: user.register_no,
+//                         rollNo: user.roll_no,
+//                         exam_halls: {
+//                             connectOrCreate: {
+//                                 where: {
+//                                     address: user.hall_address,
+//                                 },
+//                                 create: {
+//                                     address: user.hall_address,
+//                                 }
+//                             },
+//                         },
+//                         exams: {
+//                             connect: {
+//                                 name: user.exam_name
+//                             }
+//                         }
+//                     }
+//                 }
+//             },
+//             create: {
+//                 name: user.name,
+//                 email: user.email,
+//                 password: user.password,
+//                 phone: user.phone,
+//                 address: user.address,
+//                 student_exam_log: {
+//                     create: {
+//                         exam_date: user.exam_date,
+//                         exam_start: user.exam_start,
+//                         exam_end: user.exam_end,
+//                         exam_room: user.exam_room,
+//                         registerNo: user.register_no,
+//                         rollNo: user.roll_no,
+//                         exam_halls: {
+//                             connectOrCreate: {
+//                                 where: {
+//                                     address: user.hall_address,
+//                                 },
+//                                 create: {
+//                                     address: user.hall_address,
+//                                 }
+//                             },
+//                         },
+//                         exams: {
+//                             connect: {
+//                                 name: user.exam_name
+//                             }
+//                         }
+//                     }
+//                 }
+//             },
+//             include: {
+//                 student_exam_log: {
+//                     orderBy: {
+//                         id: 'desc'
+//                     },
+//                     include: {
+//                         exams: true,
+//                         exam_halls: true,
+//                     }
+//                 }
+//             }
+//         })))
+
+//         const emailSendJobs = users.map((user) => {
+//             if (user.first_login === true) {
+//                 return { name: 'sendEmail', data: { email: user.email, subject: `Here are your login credentials:\nEmail: ${user.email}\nPassword: ${user.password}` }, opts: { removeOnComplete: true } }
+//             }
+//             else {
+//                 return { name: 'sendEmail', data: { email: user.email, subject: `Student, Your ${user.student_exam_log[0].exams.name} Exam will be held on ${user.student_exam_log[0].exam_date}. For more details login in app with previous credentials.` }, opts: { removeOnComplete: true } }
+//             }
+//         })
+//         emailQueue.addBulk(emailSendJobs)
+//         return users
+
+//     } catch (error) {
+//         return error
+//     }
+// }
+
+// const createUserWithPassword = async (user: StudentType) => {
+//     try {
+//         const randomPassword = randomestring.generate(12)
+//         const exam_name = user.exam_name.toLocaleUpperCase()
+
+//         return {
+//             ...user,
+//             password: randomPassword,
+//             exam_name,
+//         }
+
+
+//     }
+//     catch (error) {
+//         return error
+//     }
+// }
+
+// const createStudents = async (req: Request, res: Response) => {
+//     let { exclePath } = req?.body
+//     const users: StudentType[] = importFromExcle(exclePath)
+//     processUserWithPassword(users).then((data) => { res.json({ success: 'success', data: data }) }).catch(error => {
+//         console.error('Error processing users:', error);
+//     }).finally(async () => { await prisma.$disconnect() });
+// }
+
+const signupStudent = async (req: Request, res: Response, next: NextFunction) => {
+    const { name, email, password, conpassword, address, phone } = req.body;
+    if (!name || !email || !password || !conpassword || !address || !phone) {
+        return next(new erroResponse("Fill The Form", 400));
+    }
+
+    if (password !== conpassword) {
+        return next(new erroResponse("Password And confirm Password don't match", 400));
+    }
+    const decoded = jwt.verify(req.params.token, process.env.JWT_SECRET_KEY!);
+    if (!decoded) {
+        return res.status(401).json({ error: "Invalid Token" });
+    }
+
+    const findStudent = await prisma.students.findUnique({
+        where: {
+            email
+        }
+    })
+    if (!findStudent) {
+        const salt = await genSalt(10);
+        const cryptoPassword = await hash(password, salt);
+        const student = await prisma.students.create({
+            data: {
+                name,
+                email,
+                address,
+                phone,
+                password: cryptoPassword,
+                student_exam_log: {
+                    create: {
+                        exam_logId: (decoded as any).id
+                    }
+                }
+            },
+            select: {
+                password: false
             }
         })
-        emailQueue.addBulk(emailSendJobs)
-        return users
-
-    } catch (error) {
-        return error
+        return res.status(201).json({ ok: true, message: "success", data: student })
     }
+    return res.status(201).json({ ok: true, message: "User Already exist with this email", })
+
+
+
 }
 
-const createUserWithPassword = async (user: StudentType) => {
-    try {
-        const randomPassword = randomestring.generate(12)
-        const exam_name = user.exam_name.toLocaleUpperCase()
 
-        return {
-            ...user,
-            password: randomPassword,
-            exam_name,
+const existingStudentExam = async (req: Request, res: Response, next: NextFunction) => {
+    const { email } = req.body
+    const decoded = jwt.verify(req.params.token, process.env.JWT_SECRET_KEY!);
+    if (!decoded) {
+        return res.status(401).json({ error: "Invalid Token" });
+    }
+    const findStudent = await prisma.students.findUnique({
+        where: {
+            email
         }
+    })
+    if (!findStudent) {
+        return next(new erroResponse("User don't exist with this email", 400))
+    }
 
+    const examLog = await prisma.student_exam_log.findUnique({
+        where: {
+            exam_logId: (decoded as any).id
+        }
+    })
+
+    if (examLog) {
+        return next(new erroResponse("You already apply for this exam", 400))
 
     }
-    catch (error) {
-        return error
-    }
-}
 
-const createStudents = async (req: Request, res: Response) => {
-    let { exclePath } = req?.body
-    const users: StudentType[] = importFromExcle(exclePath)
-    processUserWithPassword(users).then((data) => { res.json({ success: 'success', data: data }) }).catch(error => {
-        console.error('Error processing users:', error);
-    }).finally(async () => { await prisma.$disconnect() });
+    const student = await prisma.students.update({
+        where: { email },
+        data: {
+            student_exam_log: {
+                create: {
+                    exam_logId: (decoded as any).id
+                }
+            }
+        }
+    })
+
+    return res.status(201).json({ ok: true, message: "success", data: student })
 }
 
 const loginStudent = async (req: Request, res: Response) => {
@@ -240,28 +329,31 @@ const createLandmark = async (req: Request, res: Response) => {
 }
 
 const faceDescriptor = async (req: Request, res: Response) => {
-    const { faceVector } = req.body
+    const { faceVector } = await req.body
     const id = (req as any).user.id
     const faceVectorToString = faceVector.toString()
-    const newFaceDescriptor = await prisma.students_face_vectors.create({
+    await prisma.students_face_vectors.create({
         data: {
             faceVector: faceVectorToString,
             studentId: id,
         }
     })
-    return res.status(201).json(newFaceDescriptor)
+    return res.status(201).json({ status: 201, ok: true, message: 'susccess' })
 }
 
 const postImagePaths = async (req: Request, res: Response) => {
-    const { faceVector } = req.body
+    const { imagePaths } = req.body
     const id = (req as any).user.id
-    const newFaceDescriptor = await prisma.students_face_vectors.create({
-        data: {
-            faceVector: faceVector,
-            studentId: id,
-        }
+    imagePaths?.map(async ({ image }: { image: string }) => {
+        await prisma.photo_path.create({
+            data: {
+                path: image,
+                studentId: id,
+            },
+
+        })
     })
-    return res.status(201).json(newFaceDescriptor)
+    return res.status(201).json({ ok: true, message: 'susccess', status: 201 })
 }
 
 const faceRecognition = async (req: Request, res: Response) => {
@@ -360,4 +452,6 @@ const resetPassword = async (req: Request, res: Response, next: NextFunction) =>
     return res.status(200).json({ ok: true, message: 'susccess' })
 };
 
-export { createStudents, loginStudent, updatePassword, refreshToken, createLandmark, faceRecognition, faceDescriptor, postImagePaths, forgotPassword, resetPassword }
+export { //createStudents, 
+    signupStudent, existingStudentExam, loginStudent, updatePassword, refreshToken, createLandmark, faceRecognition, faceDescriptor, postImagePaths, forgotPassword, resetPassword
+}

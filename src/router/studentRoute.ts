@@ -1,13 +1,15 @@
 import { Router } from 'express'
 import asyncHandler from '../middleware/asyncHandler'
-import { createLandmark, createStudents, faceDescriptor, faceRecognition, loginStudent, postImagePaths, refreshToken, updatePassword } from '../controller/studentController'
+import { createLandmark, existingStudentExam, faceDescriptor, faceRecognition, loginStudent, postImagePaths, refreshToken, signupStudent, updatePassword } from '../controller/studentController'
 import { studentVerify } from '../middleware/userVerify'
 
 
 export const students = Router()
 
 students
-    .post('/', asyncHandler(createStudents))
+    // .post('/', asyncHandler(createStudents))
+    .post('/singup/:token', asyncHandler(signupStudent))
+    .post('/exist/student/exam', asyncHandler(existingStudentExam))
     .post('/login', asyncHandler(loginStudent))
     .post('/face/descriptor', studentVerify, asyncHandler(faceDescriptor))
     .post('/face/image', studentVerify, asyncHandler(postImagePaths))

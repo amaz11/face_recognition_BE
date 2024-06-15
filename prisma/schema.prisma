@@ -19,15 +19,39 @@ model exams_type {
 }
 
 model exams {
-  id               Int                @id @default(autoincrement())
-  name             String             @unique @db.VarChar(255)
-  examTypeId       Int
-  exam_type        exams_type         @relation(fields: [examTypeId], references: [id])
-  teachers_log     teachers_log[]
-  createAt         DateTime           @default(now())
-  updateAt         DateTime           @updatedAt
-  exam_routine     exam_routine[]
-  student_exam_log student_exam_log[]
+  id           Int            @id @default(autoincrement())
+  name         String         @unique @db.VarChar(255)
+  examTypeId   Int
+  exam_type    exams_type     @relation(fields: [examTypeId], references: [id])
+  createAt     DateTime       @default(now())
+  updateAt     DateTime       @updatedAt
+  exam_routine exam_routine[]
+  exam_log     exam_log[]
+}
+
+model exam_log {
+  id                    Int                  @id @default(autoincrement())
+  examId                Int
+  exam                  exams                @relation(fields: [examId], references: [id])
+  exam_year             String               @db.VarChar(4)
+  registration_deadline String
+  student_exam_log      student_exam_log[]
+  teachers_log          teachers_log[]
+  exam_log_token        exam_log_token[]
+  exam_held_date_log    exam_held_date_log[]
+}
+
+model exam_held_date_log {
+  id      Int      @id @default(autoincrement())
+  date    String
+  examId  Int
+  examLog exam_log @relation(fields: [examId], references: [id])
+}
+
+model exam_log_token {
+  token     String
+  examLogId Int      @unique
+  examLog   exam_log @relation(fields: [examLogId], references: [id])
 }
 
 model exam_routine {
@@ -73,14 +97,14 @@ model teachers_log {
   id           Int         @id @default(autoincrement())
   teacherId    Int
   teacher      teachers    @relation(fields: [teacherId], references: [id])
-  examId       Int
-  exams        exams       @relation(fields: [examId], references: [id])
   exam_halls   exam_halls? @relation(fields: [exam_hallsId], references: [id])
   exam_hallsId Int?
   exam_room    String
   exam_date    String
   exam_start   String
   exam_end     String
+  exam_log     exam_log?   @relation(fields: [exam_logId], references: [id])
+  exam_logId   Int?
 }
 
 model students {
@@ -101,21 +125,22 @@ model students {
 }
 
 model student_exam_log {
-  id           Int        @id @default(autoincrement())
+  id           Int         @id @default(autoincrement())
   studentId    Int
-  student      students   @relation(fields: [studentId], references: [id])
-  examId       Int
-  exams        exams      @relation(fields: [examId], references: [id])
-  rollNo       String
-  registerNo   String
-  exam_halls   exam_halls @relation(fields: [exam_hallsId], references: [id])
-  exam_hallsId Int
-  exam_room    String
-  exam_date    String
-  exam_start   String
-  exam_end     String
-  createAt     DateTime   @default(now())
-  updateAt     DateTime   @updatedAt
+  student      students    @relation(fields: [studentId], references: [id])
+  rollNo       String?
+  registerNo   String?
+  exam_halls   exam_halls? @relation(fields: [exam_hallsId], references: [id])
+  exam_hallsId Int?
+  exam_room    String?
+  exam_date    String?
+  exam_year    String?
+  exam_start   String?
+  exam_end     String?
+  exam_log     exam_log?   @relation(fields: [exam_logId], references: [id])
+  exam_logId   Int?        @unique
+  updateAt     DateTime    @updatedAt
+  createAt     DateTime    @default(now())
 }
 
 model students_face_vectors {
