@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -34,11 +34,15 @@ model exam_log {
   examId                Int
   exam                  exams                @relation(fields: [examId], references: [id])
   exam_year             String               @db.VarChar(4)
+  exam_date             String?
+  exam_start            String?
+  exam_end              String?
   registration_deadline String
   student_exam_log      student_exam_log[]
   teachers_log          teachers_log[]
   exam_log_token        exam_log_token[]
   exam_held_date_log    exam_held_date_log[]
+  exam_halls            exam_halls[]
 }
 
 model exam_held_date_log {
@@ -65,19 +69,30 @@ model exam_routine {
 }
 
 model exam_halls {
-  id               Int                @id @default(autoincrement())
-  address          String             @unique
-  teacherLog       teachers_log[]
-  student_exam_log student_exam_log[]
+  id         Int          @id @default(autoincrement())
+  address    String       @unique
+  examLogId  Int
+  exam_log   exam_log     @relation(fields: [examLogId], references: [id])
+  hall_rooms hall_rooms[]
 }
 
-// model exam_room {
-//   id         Int            @id @default(autoincrement())
-//   roomNo     String         @unique
-//   examHallId Int
-//   examHall   exam_halls     @relation(fields: [examHallId], references: [id])
-//   teacher    teachers_log[]
-// }
+model hall_rooms {
+  id        Int         @id @default(autoincrement())
+  roomNo    String
+  capacity  Int
+  hallId    Int
+  hall      exam_halls  @relation(fields: [hallId], references: [id])
+  seat      seat[]
+  room_duty room_duty[]
+}
+
+model seat {
+  id        Int              @id @default(autoincrement())
+  roomId    Int
+  studentId Int
+  room      hall_rooms       @relation(fields: [roomId], references: [id])
+  student   student_exam_log @relation(fields: [studentId], references: [id])
+}
 
 model teachers {
   id           Int            @id @default(autoincrement())
@@ -97,14 +112,18 @@ model teachers_log {
   id           Int         @id @default(autoincrement())
   teacherId    Int
   teacher      teachers    @relation(fields: [teacherId], references: [id])
-  exam_halls   exam_halls? @relation(fields: [exam_hallsId], references: [id])
   exam_hallsId Int?
-  exam_room    String
-  exam_date    String
-  exam_start   String
-  exam_end     String
-  exam_log     exam_log?   @relation(fields: [exam_logId], references: [id])
-  exam_logId   Int?
+  exam_log     exam_log    @relation(fields: [examLogId], references: [id])
+  examLogId    Int
+  room_duty    room_duty[]
+}
+
+model room_duty {
+  id        Int          @id @default(autoincrement())
+  teacherId Int
+  teacher   teachers_log @relation(fields: [teacherId], references: [id])
+  roomId    Int
+  room      hall_rooms   @relation(fields: [roomId], references: [id])
 }
 
 model students {
@@ -125,37 +144,34 @@ model students {
 }
 
 model student_exam_log {
-  id           Int         @id @default(autoincrement())
-  studentId    Int
-  student      students    @relation(fields: [studentId], references: [id])
-  rollNo       String?
-  registerNo   String?
-  exam_halls   exam_halls? @relation(fields: [exam_hallsId], references: [id])
-  exam_hallsId Int?
-  exam_room    String?
-  exam_date    String?
-  exam_year    String?
-  exam_start   String?
-  exam_end     String?
-  exam_log     exam_log?   @relation(fields: [exam_logId], references: [id])
-  exam_logId   Int?        @unique
-  updateAt     DateTime    @updatedAt
-  createAt     DateTime    @default(now())
+  id         Int      @id @default(autoincrement())
+  studentId  Int
+  student    students @relation(fields: [studentId], references: [id])
+  rollNo     String?
+  registerNo String?
+  exam_log   exam_log @relation(fields: [examLogId], references: [id])
+  examLogId  Int      @unique
+  updateAt   DateTime @updatedAt
+  createAt   DateTime @default(now())
+  seat       seat[]
 }
 
 model students_face_vectors {
-  id         Int      @id @default(autoincrement())
-  faceVector String   @db.LongText
+  id         Int          @id @default(autoincrement())
+  faceVector String       @db.Text
   studentId  Int
-  student    students @relation(fields: [studentId], references: [id])
-  createAt   DateTime @default(now())
+  student    students     @relation(fields: [studentId], references: [id])
+  createAt   DateTime     @default(now())
+  photo_path photo_path[]
 }
 
 model photo_path {
-  id        Int      @id @default(autoincrement())
-  path      String
-  studentId Int
-  student   students @relation(fields: [studentId], references: [id])
+  id           Int                   @id @default(autoincrement())
+  image        String
+  studentId    Int
+  descriptorId Int
+  descriptor   students_face_vectors @relation(fields: [descriptorId], references: [id])
+  student      students              @relation(fields: [studentId], references: [id])
 }
 
 enum Role {

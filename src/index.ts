@@ -8,7 +8,8 @@ import path from "path";
 import * as faceapi from 'face-api.js';
 import canvas from 'canvas';
 import errorHandler from "./middleware/errorHandler";
-import { Queue } from "bullmq";
+import { limiter, speedLimiter } from "utils/ratelimit";
+// import { Queue } from "bullmq";
 dotenv.config()
 
 
@@ -18,18 +19,19 @@ const app: Express = express()
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }))
 
-export const emailQueue = new Queue('emailQueue', {
-    connection: {
-        host: process.env.REDIS_HOST,
-        port: +process.env.REDIS_PORT!,
-    }
-});
-
+// export const emailQueue = new Queue('emailQueue', {
+//     connection: {
+//         host: process.env.REDIS_HOST,
+//         port: +process.env.REDIS_PORT!,
+//     }
+// });
 
 // middleware
 app.use(compression())
 app.use(cookieParser())
 app.use(cors())
+app.use(speedLimiter);
+app.use(limiter);
 
 // file upload directions
 app.use('/upload', express.static(path.join(__dirname, '../upload')));
