@@ -7,6 +7,8 @@ import { TeacherType } from '../types/teacher';
 import { compare, hash } from 'bcryptjs'
 import { tokenGenerator } from '../utils/jwtToken';
 import { StudentQueryParams } from '../types/student';
+import { sendToQueue } from '../utils/rabbitMQ';
+import { processQueue } from '../utils/processQueue';
 
 // const processUserWithPassword = async (userArr: TeacherType[]) => {
 //     try {
@@ -110,13 +112,48 @@ import { StudentQueryParams } from '../types/student';
 //     }
 // }
 
-// const createTeacher = async (req: Request, res: Response) => {
-//     let { exclePath } = req?.body
-//     const users: TeacherType[] = importFromExcle(exclePath)
-//     processUserWithPassword(users).then((data) => { res.json({ success: 'success', data: data }) }).catch(error => {
-//         console.error('Error processing users:', error);
-//     }).finally(async () => { await prisma.$disconnect() });
-// }
+const BATCH_SIZE = 5;
+async function createUsersInBatches(users: TeacherType[], examLogId: number) {
+    let messageCount = 0;
+
+    for (let i = 0; i < users.length; i += BATCH_SIZE) {
+        const batch = users.slice(i, i + BATCH_SIZE);
+        for (const user of batch) {
+            const password = randomestring.generate(12);
+            await sendToQueue('user_creation', JSON.stringify({
+                email: user.email,
+                password,
+                name: user.name,
+                address: user.address,
+                phone: user.phone,
+                positions: user.positions,
+                examLogId
+            }));
+            messageCount++;
+        }
+        console.log(`Batch ${i / BATCH_SIZE + 1} queued`);
+    }
+    return messageCount
+}
+
+const createTeacher = async (req: Request, res: Response) => {
+    let { exclePath, examLogId } = req?.body
+    const teachers: TeacherType[] = importFromExcle(exclePath)
+    // processUserWithPassword(users).then((data) => { res.json({ success: 'success', data: data }) }).catch(error => {
+    //     console.error('Error processing users:', error);
+    // }).finally(async () => { await prisma.$disconnect() });
+
+    const messageCount = await createUsersInBatches(teachers, examLogId)
+    if (messageCount === 0) {
+        return res.status(200).json({ message: 'No users to process' });
+    }
+    processQueue(messageCount, () => {
+        return res.status(200).json({ message: 'All teachers processed' })
+    }).catch(error => {
+        console.error('Error starting worker:', error);
+        return res.status(500).json({ error: 'Error processing queue' })
+    });
+}
 
 
 const loginTeacher = async (req: Request, res: Response) => {
@@ -189,16 +226,16 @@ const updatePassword = async (req: Request, res: Response) => {
 
 const getStudentsByRoom = async (req: Request, res: Response) => {
     const { roomNo, hall_address, date }: StudentQueryParams = req.query as unknown as StudentQueryParams
-    const data = await prisma.student_exam_log.findMany({
-        where: {
-            exam_date: date,
-            exam_room: roomNo,
-            exam_halls: {
-                address: hall_address.toLocaleUpperCase()
-            }
-        }
-    })
-    res.status(200).json({ data })
+    // const data = await prisma.student_exam_log.findMany({
+    //     where: {
+    //         // exam_date: date,
+    //         exam_room: roomNo,
+    //         exam_halls: {
+    //             address: hall_address.toLocaleUpperCase()
+    //         }
+    //     }
+    // })
+    // res.status(200).json({ data })
 }
 
 const refreshToken = async (req: Request, res: Response) => {
@@ -208,6 +245,7 @@ const refreshToken = async (req: Request, res: Response) => {
 
 }
 
-export { // createTeacher, 
+export {
+    createTeacher,
     loginTeacher, updatePassword, getStudentsByRoom, refreshToken
 }

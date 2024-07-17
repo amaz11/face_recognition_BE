@@ -1,4 +1,5 @@
-import { //createTeacher, 
+import {
+    createTeacher,
     getStudentsByRoom, loginTeacher, refreshToken, updatePassword
 } from '../controller/teacherController'
 import { Router } from 'express'
@@ -8,7 +9,7 @@ import { teacherVerify } from '../middleware/userVerify'
 export const teachers = Router()
 
 teachers
-    // .post('/', asyncHandler(createTeacher))
+    .post('/', asyncHandler(createTeacher))
     .post('/login', asyncHandler(loginTeacher))
     .put('/update/password', teacherVerify, asyncHandler(updatePassword))
     .get('/room/students', teacherVerify, asyncHandler(getStudentsByRoom))
