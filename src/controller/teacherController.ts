@@ -7,7 +7,7 @@ import { TeacherType } from '../types/teacher';
 import { compare, hash } from 'bcryptjs'
 import { tokenGenerator } from '../utils/jwtToken';
 import { StudentQueryParams } from '../types/student';
-import { sendToQueue } from '../utils/rabbitMQ';
+import { sendToQueue } from '../utils/sendToQueue';
 import { processQueue } from '../utils/processQueue';
 
 

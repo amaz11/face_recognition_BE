@@ -6,10 +6,10 @@ export const connectRabbitMQ = async (retries = 5) => {
             const channel = await connection.createChannel();
             await channel.assertQueue('user_creation', { durable: true });
 
-            console.log('Connected to RabbitMQ and queue asserted');
+            // console.log('Connected to RabbitMQ and queue asserted');
             return { connection, channel };
         } catch (error) {
-            console.error('Error connecting to RabbitMQ, retrying...', error);
+            // console.error('Error connecting to RabbitMQ, retrying...', error);
             retries -= 1;
             if (!retries) {
                 console.error('Max retries reached, exiting...');
